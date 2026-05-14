@@ -5,35 +5,54 @@ body {
   color: white;
 }
 
+* {
+  box-sizing: border-box;
+}
+
 .app {
   display: flex;
   height: 100vh;
+  overflow: hidden;
 }
 
 .sidebar {
-  width: 260px;
+  width: 280px;
   background: #111827;
   padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 15px;
+  border-right: 1px solid #1f2937;
 }
 
-.sidebar input {
-  padding: 10px;
-  border-radius: 6px;
-  border: none;
+.sidebar h2 {
+  margin-bottom: 10px;
+  color: #60a5fa;
+}
+
+.sidebar input[type="text"],
+.sidebar input[type="file"] {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #374151;
   outline: none;
+  background: #1f2937;
+  color: white;
+}
+
+.sidebar input[type="text"]:focus {
+  border-color: #3b82f6;
 }
 
 .sidebar button {
-  padding: 10px;
+  padding: 12px;
   background: #3b82f6;
   border: none;
   color: white;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   transition: 0.2s;
+  font-weight: bold;
 }
 
 .sidebar button:hover {
@@ -44,20 +63,25 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
+  background: #0f172a;
 }
 
 .messages {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .msg {
-  padding: 10px 14px;
-  margin-bottom: 10px;
-  border-radius: 10px;
-  max-width: 70%;
-  line-height: 1.4;
+  padding: 12px 16px;
+  border-radius: 14px;
+  max-width: 75%;
+  line-height: 1.5;
+  word-wrap: break-word;
 }
 
 .msg.user {
@@ -76,30 +100,63 @@ body {
 
 .inputBox {
   display: flex;
-  padding: 10px;
+  padding: 15px;
   background: #111827;
   border-top: 1px solid #1f2937;
 }
 
 .inputBox input {
   flex: 1;
-  padding: 10px;
-  border-radius: 6px;
-  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #374151;
   outline: none;
+  background: #1f2937;
+  color: white;
+}
+
+.inputBox input:focus {
+  border-color: #3b82f6;
 }
 
 .inputBox button {
   margin-left: 10px;
-  padding: 10px 20px;
+  padding: 12px 20px;
   background: #3b82f6;
   border: none;
   color: white;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   transition: 0.2s;
+  font-weight: bold;
 }
 
 .inputBox button:hover {
   background: #2563eb;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #374151;
+  border-radius: 20px;
+}
+
+@media (max-width: 768px) {
+
+  .app {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #1f2937;
+  }
+
+  .msg {
+    max-width: 90%;
+  }
 }

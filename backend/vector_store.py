@@ -2,18 +2,21 @@ import faiss
 import numpy as np
 
 index = None
-stored_texts = []
+stored_chunks = []
 DIMENSION = None
 
 
 def initialize_index(dim):
     global index, DIMENSION
+
     DIMENSION = dim
-    index = faiss.IndexFlatIP(dim)  # cosine similarity after normalization
+
+    index = faiss.IndexFlatIP(dim)
 
 
-def store_embeddings(texts, embeddings):
-    global index, stored_texts, DIMENSION
+def store_embeddings(chunks, embeddings):
+
+    global index, stored_chunks, DIMENSION
 
     vectors = np.array(embeddings).astype("float32")
 
@@ -28,17 +31,25 @@ def store_embeddings(texts, embeddings):
             f"Embedding dimension mismatch: expected {DIMENSION}, got {vectors.shape[1]}"
         )
 
-    if len(texts) != len(vectors):
-        raise ValueError("Texts and embeddings count mismatch")
+    if len(chunks) != len(vectors):
+        raise ValueError(
+            "Chunks and embeddings count mismatch"
+        )
 
     faiss.normalize_L2(vectors)
 
     index.add(vectors)
 
-    stored_texts.extend(texts)
+    stored_chunks.extend(chunks)
 
 
 def search_similar(query_embedding, top_k=3):
+
+    global index, stored_chunks
+
+    if index is None:
+        return []
+
     vector = np.array(query_embedding).astype("float32").reshape(1, -1)
 
     faiss.normalize_L2(vector)
@@ -52,17 +63,26 @@ def search_similar(query_embedding, top_k=3):
     print("Indices:", indices)
 
     for i, idx in enumerate(indices[0]):
-        if 0 <= idx < len(stored_texts):
+
+        if 0 <= idx < len(stored_chunks):
+
+            chunk_data = stored_chunks[idx]
+
             results.append({
-                "text": stored_texts[idx],
-                "score": float(distances[0][i])
+                "text": chunk_data.get("text", ""),
+                "score": float(distances[0][i]),
+                "doc_id": chunk_data.get("doc_id"),
+                "chunk_index": chunk_data.get("chunk_index"),
+                "source": chunk_data.get("source")
             })
 
     return results
 
 
 def reset_store():
-    global index, stored_texts, DIMENSION
+
+    global index, stored_chunks, DIMENSION
+
     index = None
-    stored_texts = []
+    stored_chunks = []
     DIMENSION = None

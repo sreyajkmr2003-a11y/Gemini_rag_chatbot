@@ -1,12 +1,12 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 
-from crawler import crawl_website
+from crawler import crawl_website, extract_pdf_text
 from chunker import chunk_text
-from rag import process_documents, retrieve_context
-from llm import ask_gemini
-from embeddings import get_embeddings, embed_query
+from rag import process_documents
+from llm import ask_llm
+from embeddings import embed_query
 from vector_store import search_similar
 
 app = FastAPI()
@@ -25,43 +25,92 @@ class URLRequest(BaseModel):
 class QuestionRequest(BaseModel):
     question: str
 
+
 @app.post("/ingest")
 def ingest_website(data: URLRequest):
+
     try:
-        print("\n🔥 INGEST START")
 
         documents = crawl_website(data.url)
 
         if not documents:
-            raise HTTPException(status_code=400, detail="Crawler returned empty content")
-
-        print("DOC SAMPLE:", str(documents[0])[:200])
+            raise HTTPException(
+                status_code=400,
+                detail="Crawler returned empty content"
+            )
 
         chunks = chunk_text(documents)
 
-        if not chunks:
-            raise HTTPException(status_code=400, detail="Chunking failed")
-
-        print(f"CHUNKS CREATED: {len(chunks)}")
-
-        process_documents(chunks)
+        process_documents(
+            chunks,
+            source_type="website"
+        )
 
         return {
             "success": True,
-            "message": "Ingestion successful",
+            "message": "Website ingestion successful",
             "chunks_created": len(chunks)
         }
 
     except Exception as e:
-        print("❌ INGEST ERROR:", str(e))
-        raise HTTPException(status_code=500, detail=str(e))
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
+
+@app.post("/ingest-pdf")
+async def ingest_pdf(file: UploadFile = File(...)):
+
+    try:
+
+        if not file.filename.endswith(".pdf"):
+            raise HTTPException(
+                status_code=400,
+                detail="Only PDF files are allowed"
+            )
+
+        documents = extract_pdf_text(file.file)
+
+        if not documents:
+            raise HTTPException(
+                status_code=400,
+                detail="PDF extraction failed"
+            )
+
+        chunks = chunk_text(documents)
+
+        process_documents(
+            chunks,
+            source_type="pdf"
+        )
+
+        return {
+            "success": True,
+            "message": "PDF ingestion successful",
+            "chunks_created": len(chunks)
+        }
+
+    except Exception as e:
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
 
 @app.post("/chat")
 def chat(data: QuestionRequest):
+
     try:
+
         query_embedding = embed_query(data.question)
 
-        results = search_similar(query_embedding, top_k=3)
+        results = search_similar(
+            query_embedding,
+            top_k=3
+        )
 
         if not results:
             return {
@@ -69,11 +118,21 @@ def chat(data: QuestionRequest):
                 "answer": "No relevant context found."
             }
 
-        good_chunks = [r["text"] for r in results]
+        context_chunks = []
 
-        answer = ask_gemini(
+        for r in results:
+
+            context_chunks.append(
+                f"""
+SOURCE: {r.get('source', 'unknown')}
+
+{r.get('text', '')}
+"""
+            )
+
+        answer = ask_llm(
             question=data.question,
-            context_chunks=good_chunks
+            context_chunks=context_chunks
         )
 
         return {
@@ -82,4 +141,8 @@ def chat(data: QuestionRequest):
         }
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )

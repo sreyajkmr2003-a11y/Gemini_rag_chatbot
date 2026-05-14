@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+sentence-transformers
+faiss-cpu
+google-generativeai
+python-dotenv
+beautifulsoup4
+playwright
+numpy
+pypdf
+python-multipart

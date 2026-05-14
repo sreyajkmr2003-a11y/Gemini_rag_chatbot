@@ -1,14 +1,17 @@
 import os
-import google.generativeai as genai
+from groq import Groq
 from dotenv import load_dotenv
 
 load_dotenv()
 
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+client = Groq(
+    api_key=os.getenv("GROQ_API_KEY")
+)
 
+def ask_llm(question, context_chunks):
 
-def ask_gemini(question, context_chunks):
     try:
+
         context = "\n\n".join(context_chunks)
 
         prompt = f"""
@@ -26,11 +29,22 @@ QUESTION:
 {question}
 """
 
-        model = genai.GenerativeModel("gemini-2.5-flash")
+        completion = client.chat.completions.create(
 
-        response = model.generate_content(prompt)
+            model="llama-3.1-8b-instant",
 
-        return response.text
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+
+            temperature=0.2
+        )
+
+        return completion.choices[0].message.content
 
     except Exception as e:
-        return f"Gemini Error: {str(e)}"
+
+        return f"LLM Error: {str(e)}"

@@ -1,38 +1,76 @@
-from playwright.sync_api import sync_playwright
+import requests
 from bs4 import BeautifulSoup
+from pypdf import PdfReader
 
 
 def crawl_website(url):
+
     try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(
-                headless=True,
-                args=["--no-sandbox"]
-            )
 
-            page = browser.new_page()
+        headers = {
+            "User-Agent": "Mozilla/5.0"
+        }
 
-            page.goto(url, timeout=60000, wait_until="domcontentloaded")
-            page.wait_for_timeout(2000)
+        response = requests.get(
+            url,
+            headers=headers,
+            timeout=15
+        )
 
-            html = page.content()
+        soup = BeautifulSoup(
+            response.text,
+            "html.parser"
+        )
 
-            browser.close()
-
-        soup = BeautifulSoup(html, "html.parser")
-
-        for tag in soup(["script", "style", "nav", "footer", "header"]):
+        for tag in soup([
+            "script",
+            "style",
+            "nav",
+            "footer",
+            "header"
+        ]):
             tag.decompose()
 
         text = soup.get_text(separator="\n")
 
-        lines = [line.strip() for line in text.splitlines() if line.strip()]
+        lines = [
+            line.strip()
+            for line in text.splitlines()
+            if line.strip()
+        ]
+
         cleaned_text = "\n".join(lines)
 
         cleaned_text = cleaned_text[:15000]
 
-        return [cleaned_text] if cleaned_text else []
+        return [cleaned_text]
 
     except Exception as e:
-        print("❌ CRAWLER ERROR:", str(e))
+
+        print("CRAWLER ERROR:", str(e))
+
+        return []
+
+
+def extract_pdf_text(file):
+
+    try:
+
+        reader = PdfReader(file)
+
+        text = ""
+
+        for page in reader.pages:
+
+            extracted = page.extract_text()
+
+            if extracted:
+                text += extracted + "\n"
+
+        return [text.strip()]
+
+    except Exception as e:
+
+        print("PDF ERROR:", str(e))
+
         return []
