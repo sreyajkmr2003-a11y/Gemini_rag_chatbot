@@ -1,65 +1,26 @@
 # Gemini RAG Chatbot
 
-An AI-powered Retrieval-Augmented Generation (RAG) chatbot built using React, FastAPI, FAISS, and Google's Gemini API.
+## Project Title and Description
 
-## Features
+Gemini RAG Chatbot is an AI-powered question-answering system built using Retrieval-Augmented Generation (RAG).  
+It allows users to enter a website URL, processes the content, and answers questions based on the extracted information using Google’s Gemini API.
 
-- Website URL ingestion
-- Semantic search
-- Context-aware AI responses
-- FastAPI backend
-- React frontend
-- FAISS vector database
-- Gemini-powered chatbot
+The system combines semantic search with large language model capabilities to provide accurate, context-aware responses.
 
 ---
 
-## Tech Stack
+## Setup and Usage Instructions
 
-### Frontend
-- React
-- Axios
-- CSS
-
-### Backend
-- FastAPI
-- LangChain
-- Sentence Transformers
-- FAISS
-- Gemini API
-
----
-
-## Project Structure
-
-```bash
-Gemini_rag_chatbot/
-│
-├── backend/
-│   ├── main.py
-│   ├── requirements.txt
-│
-├── frontend/
-│   ├── src/
-│   ├── public/
-│
-├── .gitignore
-├── README.md
-```
-
----
-
-## Installation
-
-### Clone Repository
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/sreyajkmr2003-a11y/Gemini_rag_chatbot.git
+cd Gemini_rag_chatbot
 ```
 
 ---
 
-# Backend Setup
+### 2. Backend Setup (FastAPI)
 
 ```bash
 cd backend
@@ -71,11 +32,11 @@ Create virtual environment:
 python -m venv venv
 ```
 
-Activate environment:
+Activate it:
 
-### Windows
+**Windows**
 ```bash
-venv\\Scripts\\activate
+venv\Scripts\activate
 ```
 
 Install dependencies:
@@ -87,10 +48,10 @@ pip install -r requirements.txt
 Create `.env` file:
 
 ```env
-GOOGLE_API_KEY=your_api_key
+GOOGLE_API_KEY=your_api_key_here
 ```
 
-Run backend:
+Run backend server:
 
 ```bash
 uvicorn main:app --reload
@@ -98,7 +59,7 @@ uvicorn main:app --reload
 
 ---
 
-# Frontend Setup
+### 3. Frontend Setup (React)
 
 ```bash
 cd frontend
@@ -108,54 +69,65 @@ npm start
 
 ---
 
-## Usage
+### 4. Usage
 
-1. Enter a website URL
-2. Click ingest
-3. Ask questions related to website content
-4. Chatbot retrieves relevant context and generates answers
+1. Open the frontend in browser
+2. Enter a website URL
+3. Click **Ingest**
+4. Ask questions based on the website content
+5. Get AI-generated responses
+
+---
+
+## Dependencies and Prerequisites
+
+### Backend Dependencies
+- FastAPI
+- Uvicorn
+- FAISS
+- Sentence Transformers
+- LangChain
+- Google Generative AI (Gemini API)
+- BeautifulSoup / Web scraping libraries
+
+### Frontend Dependencies
+- React
+- Axios
+- Node.js
+
+### Prerequisites
+- Python 3.9+
+- Node.js 16+
+- Git
+- Google Gemini API key
 
 ---
 
 ## Solution Approach
 
-The chatbot follows a Retrieval-Augmented Generation (RAG) architecture.
+This project uses a **Retrieval-Augmented Generation (RAG)** architecture.
 
-### Workflow
+### Workflow:
 
-1. Website content is ingested
-2. Text is split into chunks
-3. Embeddings are generated using Sentence Transformers
-4. Embeddings are stored in FAISS vector database
-5. User query is converted into embedding
-6. Relevant chunks are retrieved
-7. Gemini generates contextual response using retrieved information
+1. User submits a website URL
+2. Website content is scraped and extracted
+3. Text is split into smaller chunks
+4. Each chunk is converted into embeddings
+5. Embeddings are stored in a FAISS vector database
+6. User question is converted into an embedding
+7. Similar chunks are retrieved from FAISS
+8. Retrieved context is passed to Gemini API
+9. Gemini generates a final contextual response
 
 ---
 
 ## Deployment
 
-### Frontend
-Deployed on Vercel
+- Frontend: Vercel  
+- Backend: Render  
 
-### Backend
-Deployed on Render
-
----
-
-## Live Demo
-
+Live Demo:
 https://gemini-rag-chatbot-czpg.vercel.app/
-
----
-
-## Future Improvements
-
-- PDF upload support
-- Chat history
-- Authentication
-- Multi-document ingestion
-- Improved UI/UX
 
 ---
 
