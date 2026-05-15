@@ -11,9 +11,6 @@ from vector_store import search_similar
 
 app = FastAPI()
 
-# -----------------------------
-# CORS (MOBILE + FRONTEND SAFE)
-# -----------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -22,26 +19,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# -----------------------------
-# MODELS
-# -----------------------------
 class URLRequest(BaseModel):
     url: str
 
 class QuestionRequest(BaseModel):
     question: str
 
-
-# -----------------------------
-# INGEST WEBSITE
-# -----------------------------
 @app.post("/ingest")
 def ingest_website(data: URLRequest):
 
     docs = crawl_website(data.url)
 
-    if not docs or not docs[0].strip():
-        raise HTTPException(status_code=400, detail="No content found")
+    if not docs:
+        raise HTTPException(status_code=400, detail="No content found from URL")
 
     chunks = chunk_text(docs)
 
@@ -49,37 +39,31 @@ def ingest_website(data: URLRequest):
 
     return {
         "success": True,
-        "chunks_created": len(chunks)
+        "chunks": len(chunks)
     }
 
-
-# -----------------------------
-# INGEST PDF
-# -----------------------------
 @app.post("/ingest-pdf")
 async def ingest_pdf(file: UploadFile = File(...)):
 
-    if not file.filename.lower().endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Only PDF allowed")
+    if not file.filename.endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF files are allowed")
 
-    text_list = extract_pdf_text(file.file)
+    file_bytes = await file.read()
 
-    if not text_list or not text_list[0].strip():
-        raise HTTPException(status_code=400, detail="PDF extraction failed")
+    text = extract_pdf_text(file_bytes)
 
-    chunks = chunk_text(text_list)
+    if not text:
+        raise HTTPException(status_code=400, detail="Could not extract text from PDF")
+
+    chunks = chunk_text([text])
 
     process_documents(chunks, source_type="pdf")
 
     return {
         "success": True,
-        "chunks_created": len(chunks)
+        "chunks": len(chunks)
     }
 
-
-# -----------------------------
-# CHAT API
-# -----------------------------
 @app.post("/chat")
 def chat(data: QuestionRequest):
 
@@ -90,10 +74,16 @@ def chat(data: QuestionRequest):
     if not results:
         return {
             "success": True,
-            "answer": "No relevant context found."
+            "answer": "No relevant context found in knowledge base."
         }
 
-    context = [r["text"] for r in results if r.get("text")]
+    context = [r.get("text", "") for r in results if r.get("text")]
+
+    if not context:
+        return {
+            "success": True,
+            "answer": "No valid context retrieved."
+        }
 
     answer = ask_llm(data.question, context)
 
@@ -101,11 +91,7 @@ def chat(data: QuestionRequest):
         "success": True,
         "answer": answer
     }
-
-
-# -----------------------------
-# HEALTH CHECK
-# -----------------------------
+    
 @app.get("/")
 def home():
-    return {"status": "RAG backend running"}
+    return {"status": "RAG backend running successfully"}

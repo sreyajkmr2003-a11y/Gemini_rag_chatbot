@@ -1,16 +1,7 @@
 {
   "folders": [
     {
-      "name": "backend",
-      "path": "../backend"
-    },
-    {
-      "name": "frontend",
-      "path": "../frontend"
+      "path": "../.."
     }
-  ],
-  "settings": {
-    "python.defaultInterpreterPath": "python",
-    "editor.formatOnSave": true
-  }
+  ]
 }

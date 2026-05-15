@@ -6,46 +6,35 @@ export default function Sidebar({
   onIngestUrl,
   onUploadPdf,
 }) {
-
   return (
-    <div className="w-full sm:w-80 h-full p-4 bg-gray-900 text-white flex flex-col gap-6">
+    <div className="sidebar">
 
-      <h2 className="text-xl font-bold">
-        ⚡ Multi-Source RAG Chatbot
-      </h2>
+      <h2 className="title">⚡ Multi-Source RAG Chatbot</h2>
 
-      {/* WEBSITE INGEST */}
-      <div className="flex flex-col gap-2">
-
-        <h3 className="font-semibold">🌐 Website</h3>
+      <div className="section">
+        <h3>🌐 Website</h3>
 
         <input
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="Enter website URL"
-          className="p-2 rounded text-black"
+          className="input"
         />
 
-        <button
-          onClick={onIngestUrl}
-          className="bg-blue-600 hover:bg-blue-700 p-2 rounded"
-        >
+        <button onClick={onIngestUrl} className="button">
           Ingest Website
         </button>
       </div>
 
-      {/* PDF INGEST */}
-      <div className="flex flex-col gap-2">
-
-        <h3 className="font-semibold">📄 PDF Upload</h3>
+      <div className="section">
+        <h3>📄 PDF Upload</h3>
 
         <input
           type="file"
           accept=".pdf"
           onChange={onUploadPdf}
-          className="text-sm"
+          className="file-input"
         />
-
       </div>
 
     </div>

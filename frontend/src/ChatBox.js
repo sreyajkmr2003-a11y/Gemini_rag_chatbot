@@ -1,15 +1,12 @@
 import { useState } from "react";
 
 export default function ChatBox() {
-
   const [url, setUrl] = useState("");
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // 🔥 FIXED FOR MOBILE + DEPLOYMENT
- const API = "http://192.168.1.73:10000";
-
+  const API = "http://127.0.0.1:8000";
 
   const ingest = async () => {
     try {
@@ -26,22 +23,21 @@ export default function ChatBox() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.detail || "Backend error");
+        throw new Error(data.detail || data.message || "Backend error");
       }
 
       alert("Website ingestion successful");
-
     } catch (err) {
+      console.error("INGEST ERROR:", err.message);
       alert("INGEST FAILED: " + err.message);
-
     } finally {
       setLoading(false);
     }
   };
 
-
   const uploadPdf = async (e) => {
     const file = e.target.files[0];
+
     if (!file) return;
 
     try {
@@ -58,24 +54,24 @@ export default function ChatBox() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.detail || "PDF upload failed");
+        throw new Error(data.detail || data.message || "PDF upload failed");
       }
 
       alert("PDF ingestion successful");
-
     } catch (err) {
-      alert("PDF FAILED: " + err.message);
-
+      console.error("PDF ERROR:", err.message);
     } finally {
       setLoading(false);
     }
   };
 
-
   const ask = async () => {
     if (!question.trim()) return;
 
-    const userMessage = { role: "user", text: question };
+    const userMessage = {
+      role: "user",
+      text: question,
+    };
 
     setMessages((prev) => [...prev, userMessage]);
 
@@ -93,7 +89,7 @@ export default function ChatBox() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.detail || "Chat failed");
+        throw new Error(data.detail || data.message || "Chat failed");
       }
 
       const botMessage = {
@@ -103,20 +99,18 @@ export default function ChatBox() {
 
       setMessages((prev) => [...prev, botMessage]);
       setQuestion("");
-
     } catch (err) {
-      alert("CHAT ERROR: " + err.message);
-
+      console.error("CHAT ERROR:", err.message);
     } finally {
       setLoading(false);
     }
   };
 
-
   return (
     <div className="app">
 
       <div className="sidebar">
+
         <h2>⚡ RAG Chatbot</h2>
 
         <input
@@ -134,6 +128,7 @@ export default function ChatBox() {
           accept=".pdf"
           onChange={uploadPdf}
         />
+
       </div>
 
       <div className="chat">

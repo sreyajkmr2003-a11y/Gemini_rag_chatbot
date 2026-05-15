@@ -1,15 +1,10 @@
 from sentence_transformers import SentenceTransformer
 import numpy as np
 
-# Load model once (important for deployment performance)
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
 
-# -----------------------------
-# DOCUMENT EMBEDDINGS
-# -----------------------------
 def get_embeddings(texts):
-
     if not texts:
         return np.array([], dtype="float32")
 
@@ -23,12 +18,8 @@ def get_embeddings(texts):
     return np.asarray(embeddings, dtype="float32")
 
 
-# -----------------------------
-# QUERY EMBEDDING
-# -----------------------------
 def embed_query(text):
-
-    if not text or not text.strip():
+    if not text:
         return np.array([], dtype="float32")
 
     embedding = model.encode(

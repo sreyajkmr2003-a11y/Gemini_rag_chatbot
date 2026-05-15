@@ -2,7 +2,7 @@ import { useState } from "react";
 import "./App.css";
 
 export default function App() {
-  const API = "http://YOUR_IP_OR_DEPLOYED_URL:8000";
+  const API = "http://localhost:8000";
 
   const [url, setUrl] = useState("");
   const [question, setQuestion] = useState("");
@@ -10,10 +10,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
 
   const handleIngest = async () => {
-    if (!url) {
-      alert("Please enter a URL");
-      return;
-    }
+    if (!url) return alert("Please enter a URL");
 
     try {
       setLoading(true);
@@ -33,11 +30,9 @@ export default function App() {
       }
 
       alert("Website ingestion successful!");
-
     } catch (err) {
       console.error(err);
       alert(err.message);
-
     } finally {
       setLoading(false);
     }
@@ -45,14 +40,12 @@ export default function App() {
 
   const handlePdfUpload = async (e) => {
     const file = e.target.files[0];
-
     if (!file) return;
 
     try {
       setLoading(true);
 
       const formData = new FormData();
-
       formData.append("file", file);
 
       const res = await fetch(`${API}/ingest-pdf`, {
@@ -67,11 +60,9 @@ export default function App() {
       }
 
       alert("PDF ingestion successful!");
-
     } catch (err) {
       console.error(err);
       alert(err.message);
-
     } finally {
       setLoading(false);
     }
@@ -80,11 +71,7 @@ export default function App() {
   const handleAsk = async () => {
     if (!question.trim()) return;
 
-    const userMessage = {
-      role: "user",
-      text: question,
-    };
-
+    const userMessage = { role: "user", text: question };
     setMessages((prev) => [...prev, userMessage]);
 
     try {
@@ -95,9 +82,7 @@ export default function App() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          question,
-        }),
+        body: JSON.stringify({ question }),
       });
 
       const data = await res.json();
@@ -112,13 +97,10 @@ export default function App() {
       };
 
       setMessages((prev) => [...prev, botMessage]);
-
       setQuestion("");
-
     } catch (err) {
       console.error(err);
       alert(err.message);
-
     } finally {
       setLoading(false);
     }
@@ -126,15 +108,10 @@ export default function App() {
 
   return (
     <div className="App">
-
       <div className="sidebar">
-
-        <h1 className="title">
-          ⚡ RAG Chatbot
-        </h1>
+        <h1 className="title">⚡ RAG Chatbot</h1>
 
         <div className="section">
-
           <h3>🌐 Website</h3>
 
           <input
@@ -145,16 +122,12 @@ export default function App() {
             className="input"
           />
 
-          <button
-            onClick={handleIngest}
-            className="button"
-          >
+          <button onClick={handleIngest} className="button">
             Ingest Website
           </button>
         </div>
 
         <div className="section">
-
           <h3>📄 Upload PDF</h3>
 
           <input
@@ -164,39 +137,27 @@ export default function App() {
             className="file-input"
           />
         </div>
-
       </div>
 
       <div className="chat-container">
-
-        <div className="chat-header">
-          AI Assistant
-        </div>
+        <div className="chat-header">AI Assistant</div>
 
         <div className="messages">
-
           {messages.map((msg, index) => (
             <div
               key={index}
               className={`message ${
-                msg.role === "user"
-                  ? "user-message"
-                  : "bot-message"
+                msg.role === "user" ? "user-message" : "bot-message"
               }`}
             >
               {msg.text}
             </div>
           ))}
 
-          {loading && (
-            <div className="bot-message message">
-              Thinking...
-            </div>
-          )}
+          {loading && <div className="bot-message message">Thinking...</div>}
         </div>
 
         <div className="chat-input-container">
-
           <input
             type="text"
             placeholder="Ask a question..."
@@ -205,17 +166,11 @@ export default function App() {
             className="chat-input"
           />
 
-          <button
-            onClick={handleAsk}
-            className="button"
-          >
+          <button onClick={handleAsk} className="button">
             Send
           </button>
-
         </div>
-
       </div>
-
     </div>
   );
 }

@@ -1,16 +1,4 @@
 def chunk_text(documents, chunk_size=250, overlap=30):
-    """
-    Splits documents into overlapping chunks.
-
-    Args:
-        documents (list): List of text documents
-        chunk_size (int): Maximum words per chunk
-        overlap (int): Overlapping words between chunks
-
-    Returns:
-        list: List of chunk dictionaries
-    """
-
     if not documents:
         return []
 
@@ -21,15 +9,15 @@ def chunk_text(documents, chunk_size=250, overlap=30):
     step = chunk_size - overlap
 
     for doc_id, doc in enumerate(documents):
-
-        if not doc.strip():
+        if not doc or not doc.strip():
             continue
 
         words = doc.split()
+        n = len(words)
 
-        for i in range(0, len(words), step):
-
-            chunk_words = words[i:i + chunk_size]
+        for start in range(0, n, step):
+            end = start + chunk_size
+            chunk_words = words[start:end]
 
             if not chunk_words:
                 continue
@@ -37,7 +25,7 @@ def chunk_text(documents, chunk_size=250, overlap=30):
             chunks.append({
                 "text": " ".join(chunk_words),
                 "doc_id": doc_id,
-                "chunk_index": i // step,
+                "chunk_index": start // step,
                 "word_count": len(chunk_words)
             })
 

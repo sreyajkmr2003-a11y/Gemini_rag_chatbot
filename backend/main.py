@@ -1,16 +1,19 @@
+import os
+import asyncio
 from fastapi import FastAPI, HTTPException, UploadFile, File
-from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
-from crawler import crawl_website, extract_pdf_text
+from crawler import crawl_website
+from pdf_utils import extract_pdf_text
 from chunker import chunk_text
+from rag import process_documents
 from llm import ask_llm
-from embeddings import get_embeddings, embed_query
-from vector_store import store_embeddings, search_similar, reset_store
+from embeddings import embed_query
+from vector_store import search_similar
 
 app = FastAPI()
 
-# ---------------- CORS ----------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,100 +22,107 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ---------------- MODELS ----------------
 class URLRequest(BaseModel):
     url: str
 
 class QuestionRequest(BaseModel):
     question: str
 
+@app.get("/")
+def root():
+    return {"status": "running"}
 
-# ---------------- WEBSITE INGEST ----------------
 @app.post("/ingest")
-def ingest_website(data: URLRequest):
+async def ingest_website(data: URLRequest):
+    try:
+        documents = await asyncio.to_thread(crawl_website, data.url)
 
-    reset_store()
+        if not documents:
+            raise HTTPException(status_code=400, detail="No content extracted from URL")
 
-    docs = crawl_website(data.url)
+        chunks = chunk_text(documents)
 
-    if not docs:
-        raise HTTPException(status_code=400, detail="No website content found")
+        await asyncio.to_thread(process_documents, chunks, "website")
 
-    chunks = chunk_text(docs)
-
-    if not chunks:
-        raise HTTPException(status_code=400, detail="No chunks created")
-
-    texts = [c["text"] for c in chunks]
-    embeddings = get_embeddings(texts)
-
-    store_embeddings(chunks, embeddings)
-
-    print("WEB CHUNKS:", len(chunks))
-
-    return {"success": True, "source": "website", "chunks": len(chunks)}
-
-
-# ---------------- PDF INGEST ----------------
-@app.post("/ingest-pdf")
-async def ingest_pdf(file: UploadFile = File(...)):
-
-    reset_store()
-
-    if not file.filename.endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Only PDF allowed")
-
-    text_list = extract_pdf_text(file.file)
-
-    if not text_list or not text_list[0].strip():
-        raise HTTPException(status_code=400, detail="Empty PDF content")
-
-    chunks = chunk_text(text_list)
-
-    if not chunks:
-        raise HTTPException(status_code=400, detail="No chunks created")
-
-    texts = [c["text"] for c in chunks]
-    embeddings = get_embeddings(texts)
-
-    store_embeddings(chunks, embeddings)
-
-    print("PDF CHUNKS:", len(chunks))
-
-    return {"success": True, "source": "pdf", "chunks": len(chunks)}
-
-
-# ---------------- CHAT ----------------
-@app.post("/chat")
-def chat(data: QuestionRequest):
-
-    query_embedding = embed_query(data.question)
-
-    results = search_similar(query_embedding, top_k=8)
-
-    print("QUERY:", data.question)
-    print("RESULTS:", results)
-
-    if not results:
         return {
             "success": True,
-            "answer": "No relevant context found."
+            "message": "Website ingestion successful",
+            "chunks_created": len(chunks)
         }
 
-    context_chunks = [r["text"] for r in results]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-    answer = ask_llm(
-        question=data.question,
-        context_chunks=context_chunks
-    )
+@app.post("/ingest-pdf")
+async def ingest_pdf(file: UploadFile = File(...)):
+    try:
+        # 1. Validate file type
+        if not file.filename.endswith(".pdf"):
+            raise HTTPException(status_code=400, detail="Only PDF allowed")
 
-    return {
-        "success": True,
-        "answer": answer
-    }
+        # 2. Read file bytes
+        file_bytes = await file.read()
 
+        # 3. Extract text from PDF (RUN IN THREAD)
+        documents = await asyncio.to_thread(extract_pdf_text, file_bytes)
 
-# ---------------- HEALTH ----------------
-@app.get("/")
-def home():
-    return {"status": "RAG backend running"}
+        # 🔥 STEP 2 DEBUG CODE (ADD HERE)
+        print("🔵 PDF EXTRACTION OUTPUT START")
+        print("LENGTH:", len(documents) if documents else 0)
+        print("SAMPLE TEXT:", documents[:300] if documents else "EMPTY")
+        print("🔵 PDF EXTRACTION OUTPUT END")
+
+        # 4. Check extraction result
+        if not documents or len(documents.strip()) == 0:
+            raise HTTPException(status_code=400, detail="PDF extraction failed")
+
+        # 5. Chunking
+        chunks = chunk_text([documents])
+
+        print("🟢 CHUNKS CREATED:", len(chunks))
+
+        # 6. Store in vector DB
+        await asyncio.to_thread(process_documents, chunks, "pdf")
+
+        print("📦 PDF INGESTION COMPLETE")
+
+        return {
+            "success": True,
+            "message": "PDF ingestion successful",
+            "chunks_created": len(chunks)
+        }
+
+    except Exception as e:
+        print("❌ INGEST ERROR:", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/chat")
+def chat(data: QuestionRequest):
+    try:
+        query_embedding = embed_query(data.question)
+
+        results = search_similar(query_embedding, top_k=3)
+
+        if not results:
+            return {
+                "success": False,
+                "answer": "No relevant context found."
+            }
+
+        context_chunks = []
+
+        for r in results:
+            context_chunks.append(f"SOURCE: {r.get('source', 'unknown')}\n\n{r.get('text', '')}")
+
+        answer = ask_llm(
+            question=data.question,
+            context_chunks=context_chunks
+        )
+
+        return {
+            "success": True,
+            "answer": answer
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
