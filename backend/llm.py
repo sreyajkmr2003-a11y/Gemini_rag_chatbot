@@ -8,18 +8,26 @@ client = Groq(
     api_key=os.getenv("GROQ_API_KEY")
 )
 
+
+# -----------------------------
+# LLM ANSWER FUNCTION
+# -----------------------------
 def ask_llm(question, context_chunks):
 
     try:
 
-        context = "\n\n".join(context_chunks)
+        if not context_chunks:
+            return "Not found in provided data."
+
+        # Limit context size (VERY IMPORTANT for mobile + API stability)
+        context = "\n\n".join(context_chunks[:8])
 
         prompt = f"""
 You are a helpful AI assistant.
 
-Answer ONLY using the provided context.
+Use ONLY the provided context to answer.
 
-If the answer is not in the context, say:
+If the answer is not in the context, respond:
 "Not found in provided data."
 
 CONTEXT:
@@ -46,5 +54,4 @@ QUESTION:
         return completion.choices[0].message.content
 
     except Exception as e:
-
         return f"LLM Error: {str(e)}"

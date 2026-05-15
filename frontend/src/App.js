@@ -2,7 +2,7 @@ import { useState } from "react";
 import "./App.css";
 
 export default function App() {
-  const API = "http://localhost:8000";
+  const API = "http://YOUR_IP_OR_DEPLOYED_URL:8000";
 
   const [url, setUrl] = useState("");
   const [question, setQuestion] = useState("");

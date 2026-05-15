@@ -1,11 +1,11 @@
 fastapi
-uvicorn
+uvicorn[standard]
 sentence-transformers
 faiss-cpu
-google-generativeai
+numpy
 python-dotenv
 beautifulsoup4
-playwright
-numpy
+requests
 pypdf
 python-multipart
+groq

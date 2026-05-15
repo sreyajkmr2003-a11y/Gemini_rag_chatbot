@@ -10,12 +10,18 @@ body {
   font-family: Arial, sans-serif;
 }
 
+/* -----------------------------
+   MAIN APP LAYOUT
+----------------------------- */
 .App {
   display: flex;
   height: 100vh;
   overflow: hidden;
 }
 
+/* -----------------------------
+   SIDEBAR (DESKTOP)
+----------------------------- */
 .sidebar {
   width: 320px;
   background-color: #111827;
@@ -27,74 +33,30 @@ body {
   gap: 24px;
 }
 
-.title {
-  font-size: 28px;
-  font-weight: bold;
-  color: #60a5fa;
-  margin-bottom: 10px;
-}
-
-.section {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.section h3 {
-  font-size: 18px;
-  color: #d1d5db;
-}
-
-.input,
-.file-input {
-  width: 100%;
-  padding: 12px;
-  border-radius: 10px;
-  border: 1px solid #374151;
-
-  background-color: #1f2937;
-  color: white;
-
-  outline: none;
-}
-
-.input:focus {
-  border-color: #60a5fa;
-}
-
-.button {
-  padding: 12px;
-  border: none;
-  border-radius: 10px;
-
-  background-color: #2563eb;
-  color: white;
-
-  cursor: pointer;
-  transition: 0.2s ease;
-  font-size: 15px;
-  font-weight: bold;
-}
-
-.button:hover {
-  background-color: #1d4ed8;
-}
-
+/* -----------------------------
+   CHAT AREA
+----------------------------- */
 .chat-container {
   flex: 1;
   display: flex;
   flex-direction: column;
   background-color: #0f172a;
+  min-width: 0;
 }
 
+/* -----------------------------
+   HEADER
+----------------------------- */
 .chat-header {
   padding: 20px;
   border-bottom: 1px solid #1f2937;
-
   font-size: 24px;
   font-weight: bold;
 }
 
+/* -----------------------------
+   MESSAGES
+----------------------------- */
 .messages {
   flex: 1;
   overflow-y: auto;
@@ -110,6 +72,7 @@ body {
   padding: 14px;
   border-radius: 14px;
   line-height: 1.5;
+  word-wrap: break-word;
 }
 
 .user-message {
@@ -122,24 +85,23 @@ body {
   background-color: #1e293b;
 }
 
+/* -----------------------------
+   INPUT AREA
+----------------------------- */
 .chat-input-container {
   display: flex;
   gap: 12px;
-
   padding: 20px;
   border-top: 1px solid #1f2937;
 }
 
 .chat-input {
   flex: 1;
-
   padding: 14px;
   border-radius: 12px;
   border: 1px solid #374151;
-
   background-color: #1f2937;
   color: white;
-
   outline: none;
 }
 
@@ -147,6 +109,38 @@ body {
   border-color: #60a5fa;
 }
 
+/* -----------------------------
+   BUTTONS + INPUTS
+----------------------------- */
+.input,
+.file-input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #374151;
+  background-color: #1f2937;
+  color: white;
+  outline: none;
+}
+
+.button {
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background-color: #2563eb;
+  color: white;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: bold;
+}
+
+.button:hover {
+  background-color: #1d4ed8;
+}
+
+/* -----------------------------
+   SCROLLBAR
+----------------------------- */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -156,20 +150,48 @@ body {
   border-radius: 20px;
 }
 
-
+/* -----------------------------
+   MOBILE RESPONSIVE FIX (IMPORTANT)
+----------------------------- */
 @media (max-width: 768px) {
 
   .App {
     flex-direction: column;
   }
 
+  /* Sidebar becomes top panel */
   .sidebar {
     width: 100%;
     border-right: none;
     border-bottom: 1px solid #1f2937;
+    padding: 16px;
+    gap: 16px;
+  }
+
+  /* Chat takes full screen */
+  .chat-container {
+    flex: 1;
+    height: 100%;
+  }
+
+  .messages {
+    padding: 16px;
   }
 
   .message {
     max-width: 90%;
+  }
+
+  .chat-header {
+    font-size: 18px;
+    padding: 14px;
+  }
+
+  .chat-input-container {
+    padding: 12px;
+  }
+
+  .chat-input {
+    padding: 12px;
   }
 }

@@ -4,13 +4,13 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from crawler import crawl_website, extract_pdf_text
 from chunker import chunk_text
-from rag import process_documents
 from llm import ask_llm
-from embeddings import embed_query
-from vector_store import search_similar
+from embeddings import get_embeddings, embed_query
+from vector_store import store_embeddings, search_similar, reset_store
 
 app = FastAPI()
 
+# ---------------- CORS ----------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,6 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ---------------- MODELS ----------------
 class URLRequest(BaseModel):
     url: str
 
@@ -26,123 +27,92 @@ class QuestionRequest(BaseModel):
     question: str
 
 
+# ---------------- WEBSITE INGEST ----------------
 @app.post("/ingest")
 def ingest_website(data: URLRequest):
 
-    try:
+    reset_store()
 
-        documents = crawl_website(data.url)
+    docs = crawl_website(data.url)
 
-        if not documents:
-            raise HTTPException(
-                status_code=400,
-                detail="Crawler returned empty content"
-            )
+    if not docs:
+        raise HTTPException(status_code=400, detail="No website content found")
 
-        chunks = chunk_text(documents)
+    chunks = chunk_text(docs)
 
-        process_documents(
-            chunks,
-            source_type="website"
-        )
+    if not chunks:
+        raise HTTPException(status_code=400, detail="No chunks created")
 
-        return {
-            "success": True,
-            "message": "Website ingestion successful",
-            "chunks_created": len(chunks)
-        }
+    texts = [c["text"] for c in chunks]
+    embeddings = get_embeddings(texts)
 
-    except Exception as e:
+    store_embeddings(chunks, embeddings)
 
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
+    print("WEB CHUNKS:", len(chunks))
+
+    return {"success": True, "source": "website", "chunks": len(chunks)}
 
 
+# ---------------- PDF INGEST ----------------
 @app.post("/ingest-pdf")
 async def ingest_pdf(file: UploadFile = File(...)):
 
-    try:
+    reset_store()
 
-        if not file.filename.endswith(".pdf"):
-            raise HTTPException(
-                status_code=400,
-                detail="Only PDF files are allowed"
-            )
+    if not file.filename.endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF allowed")
 
-        documents = extract_pdf_text(file.file)
+    text_list = extract_pdf_text(file.file)
 
-        if not documents:
-            raise HTTPException(
-                status_code=400,
-                detail="PDF extraction failed"
-            )
+    if not text_list or not text_list[0].strip():
+        raise HTTPException(status_code=400, detail="Empty PDF content")
 
-        chunks = chunk_text(documents)
+    chunks = chunk_text(text_list)
 
-        process_documents(
-            chunks,
-            source_type="pdf"
-        )
+    if not chunks:
+        raise HTTPException(status_code=400, detail="No chunks created")
 
-        return {
-            "success": True,
-            "message": "PDF ingestion successful",
-            "chunks_created": len(chunks)
-        }
+    texts = [c["text"] for c in chunks]
+    embeddings = get_embeddings(texts)
 
-    except Exception as e:
+    store_embeddings(chunks, embeddings)
 
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
+    print("PDF CHUNKS:", len(chunks))
+
+    return {"success": True, "source": "pdf", "chunks": len(chunks)}
 
 
+# ---------------- CHAT ----------------
 @app.post("/chat")
 def chat(data: QuestionRequest):
 
-    try:
+    query_embedding = embed_query(data.question)
 
-        query_embedding = embed_query(data.question)
+    results = search_similar(query_embedding, top_k=8)
 
-        results = search_similar(
-            query_embedding,
-            top_k=3
-        )
+    print("QUERY:", data.question)
+    print("RESULTS:", results)
 
-        if not results:
-            return {
-                "success": False,
-                "answer": "No relevant context found."
-            }
-
-        context_chunks = []
-
-        for r in results:
-
-            context_chunks.append(
-                f"""
-SOURCE: {r.get('source', 'unknown')}
-
-{r.get('text', '')}
-"""
-            )
-
-        answer = ask_llm(
-            question=data.question,
-            context_chunks=context_chunks
-        )
-
+    if not results:
         return {
             "success": True,
-            "answer": answer
+            "answer": "No relevant context found."
         }
 
-    except Exception as e:
+    context_chunks = [r["text"] for r in results]
 
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
+    answer = ask_llm(
+        question=data.question,
+        context_chunks=context_chunks
+    )
+
+    return {
+        "success": True,
+        "answer": answer
+    }
+
+
+# ---------------- HEALTH ----------------
+@app.get("/")
+def home():
+    return {"status": "RAG backend running"}
