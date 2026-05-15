@@ -56,32 +56,25 @@ async def ingest_website(data: URLRequest):
 @app.post("/ingest-pdf")
 async def ingest_pdf(file: UploadFile = File(...)):
     try:
-        # 1. Validate file type
         if not file.filename.endswith(".pdf"):
             raise HTTPException(status_code=400, detail="Only PDF allowed")
 
-        # 2. Read file bytes
         file_bytes = await file.read()
 
-        # 3. Extract text from PDF (RUN IN THREAD)
         documents = await asyncio.to_thread(extract_pdf_text, file_bytes)
 
-        # 🔥 STEP 2 DEBUG CODE (ADD HERE)
         print("🔵 PDF EXTRACTION OUTPUT START")
         print("LENGTH:", len(documents) if documents else 0)
         print("SAMPLE TEXT:", documents[:300] if documents else "EMPTY")
         print("🔵 PDF EXTRACTION OUTPUT END")
 
-        # 4. Check extraction result
         if not documents or len(documents.strip()) == 0:
             raise HTTPException(status_code=400, detail="PDF extraction failed")
 
-        # 5. Chunking
         chunks = chunk_text([documents])
 
         print("🟢 CHUNKS CREATED:", len(chunks))
 
-        # 6. Store in vector DB
         await asyncio.to_thread(process_documents, chunks, "pdf")
 
         print("📦 PDF INGESTION COMPLETE")
